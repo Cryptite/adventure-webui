@@ -54,6 +54,7 @@ kotlin {
         val jvmMain by getting {
             dependencies {
                 implementation(libs.bundles.ktor.server)
+                implementation(libs.bundles.ktor.client)
 
                 implementation(libs.adventure.minimessage)
                 implementation(libs.adventure.text.serializer.gson)
@@ -79,7 +80,7 @@ distributions {
     }
 }
 
-tasks.getByName<Jar>("jvmJar") {
+tasks.named<Jar>("jvmJar") {
     val webpackTask = if (isDevelopment()) {
         "jsBrowserDevelopmentWebpack"
     } else {
@@ -88,12 +89,12 @@ tasks.getByName<Jar>("jvmJar") {
         tasks.getByName<KotlinWebpack>(taskName)
     }
 
-    dependsOn(tasks.getByName("check"), webpackTask)
+    dependsOn("check", webpackTask)
     from(File(webpackTask.destinationDirectory, webpackTask.outputFileName))
-    rootProject.extensions.findByType<IndraGitExtension>()!!.applyVcsInformationToManifest(manifest)
+    rootProject.indraGit.applyVcsInformationToManifest(manifest)
 }
 
-tasks.getByName<JavaExec>("run") {
+tasks.named<JavaExec>("run") {
     if (isDevelopment()) {
         jvmArgs("-Dio.ktor.development=true")
     }
@@ -101,11 +102,15 @@ tasks.getByName<JavaExec>("run") {
     classpath(tasks.getByName<Jar>("jvmJar"))
 }
 
-tasks.getByName<AbstractCopyTask>("jvmProcessResources") {
+tasks.named<AbstractCopyTask>("jvmProcessResources") {
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
 
     filesMatching("application.conf") {
-        expand("jsScriptFile" to "${rootProject.name}.js")
+        expand(
+            "jsScriptFile" to "${rootProject.name}.js",
+            "miniMessageVersion" to libs.adventure.minimessage.get().versionConstraint.requiredVersion,
+            "commitHash" to rootProject.extensions.findByType<IndraGitExtension>()!!.commit()?.name.orEmpty()
+        )
     }
 }
 

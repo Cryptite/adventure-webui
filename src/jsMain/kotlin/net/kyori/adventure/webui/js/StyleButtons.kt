@@ -8,6 +8,7 @@ import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLTextAreaElement
 import org.w3c.dom.asList
+import org.w3c.dom.get
 
 // https://iro.js.org/colorPicker_api.html
 private external interface ColorPicker {
@@ -58,10 +59,10 @@ public val STYLE_WRAPPERS: Map<String, StyleTag> = mapOf(
 )
 
 public fun installStyleButtons() {
-    val inputBox = document.getElementById("input")!!.unsafeCast<HTMLTextAreaElement>()
+    val inputBox = document.element<HTMLTextAreaElement>("input")
 
     STYLE_WRAPPERS.forEach { (buttonName, tag) ->
-        val button = document.getElementById("editor-$buttonName-button")!!.unsafeCast<HTMLButtonElement>()
+        val button = document.element<HTMLButtonElement>("editor-$buttonName-button")
         button.addEventListener(
             "click",
             {
@@ -70,19 +71,8 @@ public fun installStyleButtons() {
         )
     }
 
-    document.getElementsByClassName("dropdown-trigger").asList().forEach { element ->
-        element.addEventListener(
-            "click",
-            {
-                // This should hopefully make it so any text selected before pressing the color dropdown should stay visually selected
-                inputBox.focus()
-                element.parentElement!!.classList.toggle("is-active")
-            }
-        )
-    }
-
-    val previewSwatch = document.getElementById("preview-swatch")!!.unsafeCast<HTMLDivElement>()
-    val previewHex = document.getElementById("preview-hex")!!.unsafeCast<HTMLInputElement>()
+    val previewSwatch = document.element<HTMLDivElement>("preview-swatch")
+    val previewHex = document.element<HTMLInputElement>("preview-hex")
 
     // I've given up on kotlin type safety
     val colorPicker = js("new iro.ColorPicker('#picker')").unsafeCast<ColorPicker>()
@@ -117,7 +107,18 @@ public fun installStyleButtons() {
         }
     )
 
-    val useColorButton = document.getElementById("use-color")!!.unsafeCast<HTMLButtonElement>()
+    val namedSwatch = document.element<HTMLDivElement>("named-swatch")
+    namedSwatch.children.asList().forEach { swatch ->
+        val swatchElement = swatch.unsafeCast<HTMLDivElement>()
+        swatchElement.addEventListener("click", {
+            colorPicker.color.hexString = swatchElement.dataset["color"].orEmpty()
+            // Clicking (on a swatch) takes away focus from the editor, put it back so the user still sees
+            // their selection and knows what they're about to modify.
+            inputBox.focus()
+        })
+    }
+
+    val useColorButton = document.element<HTMLButtonElement>("use-color")
     useColorButton.addEventListener(
         "click",
         {
@@ -184,6 +185,13 @@ private fun handleStyleButton(inputBox: HTMLTextAreaElement, tag: StyleTag) {
 
     // This makes sure the websocket stuff is actually fired so the preview stays in sync.
     inputBox.dispatchEvent(CustomEvent("change", CustomEventInit(bubbles = true, cancelable = true)))
+
+    /*
+     TODO(rymiel): This focus() is problematic on mobile, as it'll most likely throw up the keyboard all of a sudden
+       which takes up a bunch of the screen. This isn't strictly a concern on the other focus() call above, as the
+       color swatches are hidden on mobile anyway, but still something to probably disable when an on-screen keyboard
+       is used
+     */
     inputBox.focus()
     inputBox.setSelectionRange(newSelStart, newSelEnd)
 }

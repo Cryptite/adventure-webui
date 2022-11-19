@@ -11,7 +11,7 @@ import org.w3c.dom.events.MouseEvent
 import org.w3c.dom.get
 
 public fun installHoverManager() {
-    val hoverTooltip = document.getElementById("hover-tooltip").unsafeCast<HTMLDivElement>()
+    val hoverTooltip = document.element<HTMLDivElement>("hover-tooltip")
 
     document.addEventListener(
         "mouseover",
@@ -62,12 +62,12 @@ public fun installHoverManager() {
                 if (top < 0) {
                     top += hoverHeight + 47
                 }
-                // Don't go off the top of the screen
             } else if (top < 0) {
+                // Don't go off the top of the screen
                 top = 0
-                // Don't go off the bottom of the screen
             } else if (top + hoverHeight > windowHeight) {
-                top = windowHeight - windowWidth
+                // Don't go off the bottom of the screen
+                top = windowHeight - hoverHeight
             }
 
             hoverTooltip.style.top = "${top}px"

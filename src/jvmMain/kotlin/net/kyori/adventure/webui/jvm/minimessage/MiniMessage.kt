@@ -1,27 +1,32 @@
 package net.kyori.adventure.webui.jvm.minimessage
 
-import io.ktor.application.Application
-import io.ktor.application.call
-import io.ktor.http.cio.websocket.Frame
-import io.ktor.http.cio.websocket.readText
-import io.ktor.http.content.defaultResource
-import io.ktor.http.content.resource
-import io.ktor.http.content.resources
-import io.ktor.http.content.static
-import io.ktor.request.receiveText
-import io.ktor.response.respondText
-import io.ktor.routing.post
-import io.ktor.routing.route
-import io.ktor.routing.routing
-import io.ktor.websocket.webSocket
+import io.ktor.http.HttpStatusCode
+import io.ktor.server.application.Application
+import io.ktor.server.application.call
+import io.ktor.server.http.content.defaultResource
+import io.ktor.server.http.content.resource
+import io.ktor.server.http.content.resources
+import io.ktor.server.http.content.static
+import io.ktor.server.request.receiveText
+import io.ktor.server.response.respondText
+import io.ktor.server.routing.get
+import io.ktor.server.routing.post
+import io.ktor.server.routing.route
+import io.ktor.server.routing.routing
+import io.ktor.server.websocket.webSocket
+import io.ktor.websocket.Frame
+import io.ktor.websocket.readText
 import kotlinx.serialization.encodeToString
 import net.kyori.adventure.text.minimessage.MiniMessage
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer
+import net.kyori.adventure.webui.BuildInfo
 import net.kyori.adventure.webui.Serializers
 import net.kyori.adventure.webui.URL_API
+import net.kyori.adventure.webui.URL_BUILD_INFO
 import net.kyori.adventure.webui.URL_EDITOR
+import net.kyori.adventure.webui.URL_MINI_SHORTEN
 import net.kyori.adventure.webui.URL_MINI_TO_HTML
 import net.kyori.adventure.webui.URL_MINI_TO_JSON
 import net.kyori.adventure.webui.URL_MINI_TO_TREE
@@ -37,6 +42,7 @@ import net.kyori.adventure.webui.jvm.minimessage.hook.INSERTION_RENDER_HOOK
 import net.kyori.adventure.webui.jvm.minimessage.hook.TEXT_COLOR_RENDER_HOOK
 import net.kyori.adventure.webui.jvm.minimessage.hook.TEXT_DECORATION_RENDER_HOOK
 import net.kyori.adventure.webui.jvm.minimessage.hook.TEXT_RENDER_HOOK
+import net.kyori.adventure.webui.jvm.minimessage.storage.BytebinStorage
 import net.kyori.adventure.webui.tryDecodeFromString
 import net.kyori.adventure.webui.websocket.Call
 import net.kyori.adventure.webui.websocket.Combined
@@ -44,6 +50,9 @@ import net.kyori.adventure.webui.websocket.Packet
 import net.kyori.adventure.webui.websocket.ParseResult
 import net.kyori.adventure.webui.websocket.Placeholders
 import net.kyori.adventure.webui.websocket.Response
+import java.time.Instant
+
+private val startedAt = Instant.now()
 
 public val Placeholders?.tagResolver: TagResolver
     get() {
@@ -81,13 +90,15 @@ public fun Application.miniMessage() {
         component(TEXT_RENDER_HOOK, 500) // content needs to be set last
     }
 
+    BytebinStorage.BYTEBIN_INSTANCE = this.getConfigString("bytebinInstance")
+
     routing {
         // define static path to resources
         static("") {
             resources("web")
             defaultResource("web/index.html")
 
-            val script = getConfigString("jsScriptFile")
+            val script = this@miniMessage.getConfigString("jsScriptFile")
             resource("js/main.js", script)
             resource("js/$script.map", "$script.map")
         }
@@ -165,6 +176,37 @@ public fun Application.miniMessage() {
                 val resolver = structure.placeholders.tagResolver
                 val root = MiniMessage.miniMessage().deserializeToTree(input, resolver)
                 call.respondText(root.toString())
+            }
+
+            post(URL_MINI_SHORTEN) {
+                val structure = Serializers.json.tryDecodeFromString<Combined>(call.receiveText())
+                val code = BytebinStorage.bytebinStore(structure ?: return@post)
+                if (code != null) {
+                    call.respondText(code)
+                } else {
+                    call.response.status(HttpStatusCode.InternalServerError)
+                }
+            }
+
+            get(URL_MINI_SHORTEN) {
+                val code = call.parameters["code"]
+                val structure = BytebinStorage.bytebinLoad(code ?: return@get)
+                if (structure != null) {
+                    // Pretty sure this is pointlessly decoding from json and then re-encoding to the same thing
+                    call.respondText(Serializers.json.encodeToString(structure))
+                } else {
+                    call.response.status(HttpStatusCode.NotFound)
+                }
+            }
+
+            get(URL_BUILD_INFO) {
+                val info = BuildInfo(
+                    startedAt = startedAt.toString(),
+                    version = this@miniMessage.getConfigString("miniMessageVersion"),
+                    commit = this@miniMessage.getConfigString("commitHash"),
+                    bytebinInstance = BytebinStorage.BYTEBIN_INSTANCE,
+                )
+                call.respondText(Serializers.json.encodeToString(info))
             }
 
             route(URL_EDITOR) { installEditor() }
