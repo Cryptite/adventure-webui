@@ -31,7 +31,7 @@
     <header class="navbar">
       <div class="navbar-brand">
         <a class="navbar-item" id="home-link">
-          <h1 class="title mc-font">MiniMessage Viewer</h1>
+          <h1 class="title mc-font">Lore Editor</h1>
         </a>
         <a id="burger-menu" class="navbar-burger" role="button">
           <span></span>
@@ -95,6 +95,7 @@
             <div class="is-horizontal is-flex">
               <label for="input">Input: </label>
               <div class="is-flex ml-auto">
+                <!-- TODO(rymiel): These decorations which don't work in non-chat contexts should probably be hidden when in that mode -->
                 <div class="is-flex ml-1" style="visibility: hidden">
                   <div class="buttons has-addons is-right">
                     <button class="button" id="editor-open-url-button" aria-label="Open URL" title="Add clickable URL">
@@ -208,7 +209,7 @@
                           <button class="button is-info share-button" id="short-link-share-button" aria-label="Share short link" title="Share short link">
                             Share short link
                           </button>
-                          <button class="button is-info share-button" id="full-link-share-button" aria-label="Share full link" title="Share full link">
+                          <button class="button is-info share-button" id="full-link-share-button" aria-label="Share full link" title="Share full link" >
                             Share full link
                           </button>
                         </div>
@@ -217,7 +218,6 @@
                   </div>
                 </div>
               </div>
-              <!-- TODO(rymiel): These decorations which don't work in non-chat contexts should probably be hidden when in that mode -->
             </div>
             <textarea id="input" class="textarea mono-font" minrows="4" placeholder="<blue>Hello <red>World!" spellcheck="false"></textarea>
           </div>

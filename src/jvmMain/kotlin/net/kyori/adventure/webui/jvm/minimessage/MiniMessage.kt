@@ -125,14 +125,16 @@ public fun Application.miniMessage() {
                         val response =
                             try {
                                 val result = StringBuilder()
-
+                                var tooLong = false
                                 if (isolateNewlines) {
                                     miniMessage
                                         .split("\n")
                                         .map { line -> HookManager.render(line) }
                                         .map { line ->
-                                            MiniMessage.miniMessage()
-                                                .deserialize(line, tagResolver)
+                                            val stripped = MiniMessage.miniMessage().stripTags(line)
+                                            val length = stripped.length
+                                            if (length > 32 && !tooLong) tooLong = true
+                                            MiniMessage.miniMessage().deserialize(line, tagResolver)
                                         }
                                         .map { component -> HookManager.render(component) }
                                         .forEach { component ->
@@ -144,7 +146,10 @@ public fun Application.miniMessage() {
                                     result.appendComponent(HookManager.render(component))
                                 }
 
-                                Response(ParseResult(true, result.toString()))
+                                if (tooLong)
+                                    Response(ParseResult(false, errorMessage = "Too long!"))
+                                else
+                                    Response(ParseResult(true, result.toString()))
                             } catch (e: Exception) {
                                 Response(
                                     ParseResult(
