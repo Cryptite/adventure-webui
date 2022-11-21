@@ -609,7 +609,7 @@ private fun parse() {
                                 add(list.getOrNull(0) ?: "\u200B")
                                 add(list.getOrNull(1) ?: "\u200B")
                             }
-                        Mode.LORE -> if (editorInput.type == "lore") list.safeSubList(0, 15) else list.safeSubList(0, 1)
+                        Mode.LORE -> list.safeSubList(0, 15)
                         else -> list
                     }
                 }
