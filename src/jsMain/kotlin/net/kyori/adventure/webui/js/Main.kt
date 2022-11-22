@@ -609,15 +609,17 @@ private fun parse() {
                                 add(list.getOrNull(0) ?: "\u200B")
                                 add(list.getOrNull(1) ?: "\u200B")
                             }
+
                         Mode.LORE -> list.safeSubList(0, 15)
                         else -> list
                     }
-                }
+                }.toMutableList()
 
-            val combinedLines = "<gray>--------------\n" +
+            lines.add(1, "<gray>--------------\n")
+            val combinedLines =
                 lines.joinToString(separator = "\n") { line ->
                     // we don't want to lose empty lines, so replace them with zero-width space
-                    if (line == "") "\u200B" else line.substring(0, 32)
+                    if (line == "") "\u200B" else line.substring(0, 32) // Otherwise, 32 character max length per line
                 }
 
             webSocket.send(Call(combinedLines, isolateNewlines = currentMode == Mode.LORE))
