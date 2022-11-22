@@ -615,7 +615,7 @@ private fun parse() {
                     }
                 }.toMutableList()
 
-            lines.add(1, "<gray>--------------\n")
+            lines.add(1, "<gray>--------------")
             val combinedLines =
                 lines.joinToString(separator = "\n") { line ->
                     // we don't want to lose empty lines, so replace them with zero-width space
