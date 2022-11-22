@@ -619,7 +619,7 @@ private fun parse() {
             val combinedLines =
                 lines.joinToString(separator = "\n") { line ->
                     // we don't want to lose empty lines, so replace them with zero-width space
-                    if (line == "") "\u200B" else line.substring(0, 32) // Otherwise, 32 character max length per line
+                    if (line == "") "\u200B" else line
                 }
 
             webSocket.send(Call(combinedLines, isolateNewlines = currentMode == Mode.LORE))
