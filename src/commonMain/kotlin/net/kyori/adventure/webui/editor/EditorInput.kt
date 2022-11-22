@@ -13,6 +13,5 @@ public data class EditorInput(
      */
     public val command: String,
     /** The name of your application to display to the user. */
-    public val application: String,
-    public val type: String
+    public val application: String
 )
