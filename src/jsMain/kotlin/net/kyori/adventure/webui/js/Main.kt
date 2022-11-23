@@ -71,7 +71,7 @@ public fun mainLoaded() {
     // Defaults for all toast messages
     bulmaToast.setDefaults(
         json(
-            "position" to "bottom-right",
+            "position" to "top-right",
             "dismissible" to true,
             "pauseOnHover" to true,
             "duration" to 6000,

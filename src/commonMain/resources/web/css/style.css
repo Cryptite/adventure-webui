@@ -38,8 +38,7 @@
 }
 /* output pane */
 #output-pane {
-    background-image: url("../img/grass.jpg");
-    background-size: cover;
+    background-image: none !important;
 }
 #output-pane #server-list-icon,
 #output-pane #server-list-header {
@@ -169,7 +168,7 @@
     color: #AA00AA;
 }
 #output-pre.mode-lore, #hover-tooltip {
-    background-color: rgba(1, 1, 1, 0.8);
+    background-color: rgba(1, 1, 1, 0.5);
     border: solid #1b0035;
     padding: 5px;
     line-height: 19px;
@@ -205,14 +204,17 @@
     align-items: center;
 }
 #main-container {
-    padding: 0 32px;
+    padding: 0 128px;
     width: 100%;
+    justify-content: space-between;
+    max-width: 100%;
 }
 .gone {
     display: none;
 }
 html {
     overflow-y: hidden;
+    background-color: transparent !important;
 }
 .hero {
     padding-bottom: 15px;
@@ -285,4 +287,18 @@ input.placeholder-key:invalid {
     table.table td, table.table th {
         border-width: 0 0 1px;
     }
+}
+
+.navbar {
+  background-color: transparent !important;
+}
+
+#main-container .columns {
+  width: 50%;
+  margin-left: 20px;
+  margin-right: 20px;
+}
+
+#input {
+  min-height: 24em;
 }
