@@ -51,7 +51,7 @@ import org.w3c.fetch.RequestInit
 import kotlin.js.Promise
 import kotlin.js.json
 
-private val homeUrl: String by lazy { window.location.href.split('?')[0] }
+private val homeUrl: String by lazy { "https://lokamc.com/lore" }
 private val urlParams: URLSearchParams by lazy { URLSearchParams(window.location.search) }
 private val modeButtons: List<HTMLAnchorElement> by lazy { document.getElementsByClassName("mc-mode").asList().unsafeCast<List<HTMLAnchorElement>>() }
 
