@@ -51,7 +51,7 @@ import org.w3c.fetch.RequestInit
 import kotlin.js.Promise
 import kotlin.js.json
 
-private val homeUrl: String by lazy { window.location.href.split('?')[0] }
+private val homeUrl: String by lazy { "https://lokamc.com/lore" }
 private val urlParams: URLSearchParams by lazy { URLSearchParams(window.location.search) }
 private val modeButtons: List<HTMLAnchorElement> by lazy { document.getElementsByClassName("mc-mode").asList().unsafeCast<List<HTMLAnchorElement>>() }
 
@@ -92,7 +92,7 @@ public fun mainLoaded() {
             if (!response.ok) {
                 isInEditorMode = false
                 bulmaToast.toast(
-                    "Could not load editor session!",
+                    "Could not load editor session! Try /lore edit in-game.",
                     type = "is-error"
                 )
             } else {
@@ -102,7 +102,7 @@ public fun mainLoaded() {
                     if (possibleEditorInput == null) {
                         isInEditorMode = false
                         bulmaToast.toast(
-                            "Could not load editor session!",
+                            "Could not load editor session! Try /lore edit in-game.",
                             type = "is-error"
                         )
                     } else {

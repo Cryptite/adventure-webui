@@ -90,10 +90,9 @@
           <!-- INPUT -->
           <div class="column is-full mt-2 pb-0">
             <div class="is-horizontal is-flex">
-              <label for="input">Input: </label>
               <div class="is-flex ml-auto">
                 <!-- TODO(rymiel): These decorations which don't work in non-chat contexts should probably be hidden when in that mode -->
-                <div class="is-flex ml-1" style="visibility: hidden">
+                <div class="is-flex ml-1" style="display:none!important">
                   <div class="buttons has-addons is-right">
                     <button class="button" id="editor-open-url-button" aria-label="Open URL" title="Add clickable URL">
                       <span class="icon is-small"><i class="fas fa-link"></i></span>
@@ -227,7 +226,6 @@
           <!-- OUTPUT -->
           <div hidden id="hover-tooltip" class="mc-font"></div>
           <div class="column is-full is-flex is-flex-direction-column">
-            <label for="output-pane">Output: </label>
             <p hidden id="connection-lost-warning" class="has-text-danger is-size-4">
               <span class="icon"><i class="fas fa-exclamation-triangle"></i></span> Your connection with the server has been lost, please reload the page.
             </p>
@@ -334,5 +332,12 @@
         <footer class="modal-card-foot"></footer>
       </div>
     </div>
+    <script>
+      window.addEventListener('load', function(){
+        var editor = document.getElementById('input');
+        var event = new Event('change');
+        editor.dispatchEvent(event);
+      });
+    </script>
   </body>
 </html>

@@ -269,24 +269,15 @@ input.placeholder-key:invalid {
 #placeholder-tip {
     display: none;
 }
-@media (prefers-color-scheme: light) {
-    body {
-        background-color: #E6E6E6;
-    }
-    .navbar {
-        background-color: #F5F5F5;
-    }
+
+section.modal-card-body 
+    background-color: black;
 }
-@media (prefers-color-scheme: dark) {
-    section.modal-card-body {
-        background-color: black;
-    }
-    div.modal-background {
-        background-color: rgba(10,10,10,.86);
-    }
-    table.table td, table.table th {
-        border-width: 0 0 1px;
-    }
+div.modal-background {
+    background-color: rgba(10,10,10,.86);
+}
+table.table td, table.table th {
+    border-width: 0 0 1px;
 }
 
 .navbar {
