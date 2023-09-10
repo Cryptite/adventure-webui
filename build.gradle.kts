@@ -5,9 +5,21 @@ import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpack
 plugins {
     application
     alias(libs.plugins.indra.git)
+    alias(libs.plugins.jib)
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.kotlinx.serialization)
     alias(libs.plugins.spotless)
+}
+
+val javaTarget = 17
+java {
+    val targetVersion = JavaVersion.toVersion(javaTarget)
+    sourceCompatibility = targetVersion
+    targetCompatibility = targetVersion
+    if (JavaVersion.current() < targetVersion) {
+        toolchain { languageVersion.set(JavaLanguageVersion.of(javaTarget)) }
+        kotlin.jvmToolchain(javaTarget)
+    }
 }
 
 repositories {
@@ -40,29 +52,33 @@ kotlin {
 
     jvm {
         withJava()
+        compilations.configureEach {
+            kotlinOptions.jvmTarget = "$javaTarget"
+            kotlinOptions.freeCompilerArgs += "-Xjdk-release=$javaTarget"
+        }
     }
 
     js(IR) {
         browser {
-            binaries.executable()
         }
+        binaries.executable()
     }
 
     sourceSets {
-        all {
+        configureEach {
             languageSettings {
                 optIn("kotlin.RequiresOptIn")
             }
         }
 
-        val commonMain by getting {
+        named("commonMain") {
             dependencies {
                 implementation(libs.kotlinx.serialization.json)
                 implementation(libs.kotlinx.html)
             }
         }
 
-        val jvmMain by getting {
+        named("jvmMain") {
             dependencies {
                 implementation(libs.bundles.ktor.server)
                 implementation(libs.bundles.ktor.client)
@@ -83,7 +99,7 @@ application {
 distributions {
     main {
         contents {
-            from("$buildDir/libs") {
+            from("${layout.buildDirectory.get().asFile}/libs") {
                 rename("${rootProject.name}-jvm", rootProject.name)
                 into("lib")
             }
@@ -91,47 +107,86 @@ distributions {
     }
 }
 
-tasks.named<Jar>("jvmJar") {
+jib {
+    to.image = "ghcr.io/kyoripowered/adventure-webui/webui"
+    from {
+        image = "eclipse-temurin:$javaTarget-jre"
+        platforms {
+            // We can only build multi-arch images when pushing to a registry, not when building locally
+            val requestedTasks = gradle.startParameter.taskNames
+            if ("jibBuildTar" in requestedTasks || "jibDockerBuild" in requestedTasks) {
+                platform {
+                    // todo: better logic
+                    architecture = when (System.getProperty("os.arch")) {
+                        "aarch64" -> "arm64"
+                        else -> "amd64"
+                    }
+                    os = "linux"
+                }
+            } else {
+                platform {
+                    architecture = "amd64"
+                    os = "linux"
+                }
+                platform {
+                    architecture = "arm64"
+                    os = "linux"
+                }
+            }
+        }
+    }
+    container {
+        setMainClass(application.mainClass)
+        labels.put(
+            "org.opencontainers.image.description",
+            """A Web UI for working with Adventure components. 
+            Built with Adventure ${libs.versions.adventure.get()}, from webui commit ${indraGit.commit()?.name ?: "<unknown>"}""",
+        )
+    }
+}
+
+tasks {
     val webpackTask = if (isDevelopment()) {
         "jsBrowserDevelopmentWebpack"
     } else {
         "jsBrowserProductionWebpack"
     }.let { taskName ->
-        tasks.getByName<KotlinWebpack>(taskName)
+        named<KotlinWebpack>(taskName)
     }
 
-    dependsOn("check", webpackTask)
-    from(File(webpackTask.destinationDirectory, webpackTask.outputFileName))
-    rootProject.indraGit.applyVcsInformationToManifest(manifest)
-}
-
-tasks.named<JavaExec>("run") {
-    if (isDevelopment()) {
-        jvmArgs("-Dio.ktor.development=true")
+    named<Jar>("jvmJar") {
+        rootProject.indraGit.applyVcsInformationToManifest(manifest)
     }
 
-    classpath(tasks.getByName<Jar>("jvmJar"))
-}
+    named<JavaExec>("run") {
+        if (isDevelopment()) {
+            jvmArgs("-Dio.ktor.development=true")
+        }
 
-tasks.named<AbstractCopyTask>("jvmProcessResources") {
-    duplicatesStrategy = DuplicatesStrategy.INCLUDE
-
-    filesMatching("application.conf") {
-        expand(
-            "jsScriptFile" to "${rootProject.name}.js",
-            "miniMessageVersion" to libs.adventure.minimessage.get().versionConstraint.requiredVersion,
-            "commitHash" to rootProject.extensions.findByType<IndraGitExtension>()!!.commit()?.name.orEmpty(),
-        )
+        classpath(named<Jar>("jvmJar"))
     }
-}
 
-// Implicit task dependency issue?
-tasks.distTar {
-    dependsOn("allMetadataJar")
-}
+    named<AbstractCopyTask>("jvmProcessResources") {
+        duplicatesStrategy = DuplicatesStrategy.INCLUDE
 
-tasks.distZip {
-    dependsOn("allMetadataJar")
+        from(webpackTask.flatMap { it.mainOutputFile })
+        filesMatching("application.conf") {
+            expand(
+                "jsScriptFile" to "${rootProject.name}.js",
+                "miniMessageVersion" to libs.adventure.minimessage.get().versionConstraint.requiredVersion,
+                "commitHash" to rootProject.extensions.getByType<IndraGitExtension>().commit()?.name.orEmpty(),
+            )
+        }
+    }
+
+    // Implicit task dependency issue?
+    distTar {
+        dependsOn("allMetadataJar", "jsJar")
+    }
+
+    distZip {
+        dependsOn("allMetadataJar", "jsJar")
+    }
 }
 
 /** Checks if the development property is set. */
