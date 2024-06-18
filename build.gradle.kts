@@ -1,7 +1,9 @@
+@file:OptIn(ExperimentalKotlinGradlePluginApi::class)
+
 import net.kyori.indra.git.IndraGitExtension
+import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpack
 
-@Suppress("DSL_SCOPE_VIOLATION") // https://youtrack.jetbrains.com/issue/KTIJ-19369
 plugins {
     application
     alias(libs.plugins.indra.git)
@@ -11,7 +13,7 @@ plugins {
     alias(libs.plugins.spotless)
 }
 
-val javaTarget = 17
+val javaTarget = 21
 java {
     val targetVersion = JavaVersion.toVersion(javaTarget)
     sourceCompatibility = targetVersion
@@ -52,14 +54,17 @@ kotlin {
 
     jvm {
         withJava()
-        compilations.configureEach {
-            kotlinOptions.jvmTarget = "$javaTarget"
-            kotlinOptions.freeCompilerArgs += "-Xjdk-release=$javaTarget"
+        compilerOptions {
+            jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.fromTarget("$javaTarget")
+            freeCompilerArgs.add("-Xjdk-release=$javaTarget")
         }
     }
 
-    js(IR) {
+    js {
         browser {
+        }
+        compilerOptions {
+            target = "es2015"
         }
         binaries.executable()
     }
@@ -110,17 +115,18 @@ distributions {
 jib {
     to.image = "ghcr.io/kyoripowered/adventure-webui/webui"
     from {
-        image = "eclipse-temurin:$javaTarget-jre"
+        image = "azul/zulu-openjdk-alpine:$javaTarget-jre"
         platforms {
             // We can only build multi-arch images when pushing to a registry, not when building locally
             val requestedTasks = gradle.startParameter.taskNames
             if ("jibBuildTar" in requestedTasks || "jibDockerBuild" in requestedTasks) {
                 platform {
                     // todo: better logic
-                    architecture = when (System.getProperty("os.arch")) {
-                        "aarch64" -> "arm64"
-                        else -> "amd64"
-                    }
+                    architecture =
+                        when (System.getProperty("os.arch")) {
+                            "aarch64" -> "arm64"
+                            else -> "amd64"
+                        }
                     os = "linux"
                 }
             } else {
@@ -146,13 +152,14 @@ jib {
 }
 
 tasks {
-    val webpackTask = if (isDevelopment()) {
-        "jsBrowserDevelopmentWebpack"
-    } else {
-        "jsBrowserProductionWebpack"
-    }.let { taskName ->
-        named<KotlinWebpack>(taskName)
-    }
+    val webpackTask =
+        if (isDevelopment()) {
+            "jsBrowserDevelopmentWebpack"
+        } else {
+            "jsBrowserProductionWebpack"
+        }.let { taskName ->
+            named<KotlinWebpack>(taskName)
+        }
 
     named<Jar>("jvmJar") {
         rootProject.indraGit.applyVcsInformationToManifest(manifest)
