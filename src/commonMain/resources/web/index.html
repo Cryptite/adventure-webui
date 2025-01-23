@@ -58,6 +58,36 @@
               <button class="button" id="copy-button" aria-label="Copy input" title="Copy input">
                 <span class="icon is-small"><i class="fas fa-copy"></i></span>
               </button>
+              <button class="button" id="in-game-preview-button" aria-label="Try in-game" title="Try in-game">
+                <span class="icon is-small"><i class="fas fa-gamepad"></i></span>
+              </button>
+              <div class="dropdown share-dropdown">
+                <div class="dropdown-trigger">
+                  <button class="button" aria-haspopup="true" aria-controls="share-dropdown-menu">
+                    <span class="icon is-small">
+                      <i class="fas fa-share-alt"></i>
+                    </span>
+                    <span class="icon is-small">
+                      <i class="fas fa-angle-down" aria-hidden="true"></i>
+                    </span>
+                  </button>
+                </div>
+                <div class="dropdown-menu" id="share-dropdown-menu" role="menu">
+                  <div class="dropdown-content">
+                    <div class="dropdown-item">
+                      <p>Short links expire after 6 months!</p>
+                    </div>
+                    <div class="dropdown-item">
+                      <button class="button is-info share-button" id="short-link-share-button" aria-label="Share short link" title="Share short link">
+                        Share short link
+                      </button>
+                      <button class="button is-info share-button" id="full-link-share-button" aria-label="Share full link" title="Share full link">
+                        Share full link
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
               <button class="button" id="export-to-json-button" aria-label="Export to JSON" title="Export to JSON">
                 <span class="icon is-small"><i class="fas fa-file-export"></i></span>
               </button>

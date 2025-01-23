@@ -2,11 +2,11 @@ package net.kyori.adventure.webui.jvm.minimessage
 
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
-import io.ktor.server.application.call
 import io.ktor.server.http.content.defaultResource
 import io.ktor.server.http.content.resource
 import io.ktor.server.http.content.resources
 import io.ktor.server.http.content.static
+import io.ktor.server.http.content.staticResources
 import io.ktor.server.request.receiveText
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
@@ -26,6 +26,7 @@ import net.kyori.adventure.webui.Serializers
 import net.kyori.adventure.webui.URL_API
 import net.kyori.adventure.webui.URL_BUILD_INFO
 import net.kyori.adventure.webui.URL_EDITOR
+import net.kyori.adventure.webui.URL_IN_GAME_PREVIEW
 import net.kyori.adventure.webui.URL_MINI_SHORTEN
 import net.kyori.adventure.webui.URL_MINI_TO_HTML
 import net.kyori.adventure.webui.URL_MINI_TO_JSON
@@ -42,15 +43,18 @@ import net.kyori.adventure.webui.jvm.minimessage.hook.INSERTION_RENDER_HOOK
 import net.kyori.adventure.webui.jvm.minimessage.hook.TEXT_COLOR_RENDER_HOOK
 import net.kyori.adventure.webui.jvm.minimessage.hook.TEXT_DECORATION_RENDER_HOOK
 import net.kyori.adventure.webui.jvm.minimessage.hook.TEXT_RENDER_HOOK
+import net.kyori.adventure.webui.jvm.minimessage.preview.ServerStatusPreviewManager
 import net.kyori.adventure.webui.jvm.minimessage.storage.BytebinStorage
 import net.kyori.adventure.webui.tryDecodeFromString
 import net.kyori.adventure.webui.websocket.Call
 import net.kyori.adventure.webui.websocket.Combined
+import net.kyori.adventure.webui.websocket.InGamePreview
 import net.kyori.adventure.webui.websocket.Packet
 import net.kyori.adventure.webui.websocket.ParseResult
 import net.kyori.adventure.webui.websocket.Placeholders
 import net.kyori.adventure.webui.websocket.Response
 import java.time.Instant
+import net.kyori.adventure.webui.jvm.minimessage.hook.SHADOW_COLOR_RENDER_HOOK
 
 private val startedAt = Instant.now()
 
@@ -85,12 +89,16 @@ public fun Application.miniMessage() {
         component(INSERTION_RENDER_HOOK)
         component(COMPONENT_CLASS_RENDER_HOOK)
         component(TEXT_COLOR_RENDER_HOOK)
+        component(SHADOW_COLOR_RENDER_HOOK)
         component(TEXT_DECORATION_RENDER_HOOK)
         component(FONT_RENDER_HOOK)
         component(TEXT_RENDER_HOOK, 500) // content needs to be set last
     }
 
     BytebinStorage.BYTEBIN_INSTANCE = this.getConfigString("bytebinInstance")
+
+    // Initialise the server status preview manager.
+    val previewManager = ServerStatusPreviewManager(this)
 
     routing {
         // define static path to resources
@@ -201,6 +209,16 @@ public fun Application.miniMessage() {
                     call.respondText(Serializers.json.encodeToString(structure))
                 } else {
                     call.response.status(HttpStatusCode.NotFound)
+                }
+            }
+
+            post(URL_IN_GAME_PREVIEW) {
+                val request = Serializers.json.tryDecodeFromString<InGamePreview>(call.receiveText())
+                if (request != null && request.miniMessage != null && request.key != null) {
+                    val hostname = previewManager.initializePreview(request.miniMessage, request.key)
+                    call.respondText(hostname)
+                } else {
+                    call.response.status(HttpStatusCode.BadRequest)
                 }
             }
 
