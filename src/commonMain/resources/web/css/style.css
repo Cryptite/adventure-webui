@@ -204,6 +204,7 @@
 .is-horizontal {
     align-items: center;
 }
+#faq,
 #main-container {
     padding: 0 128px;
     width: 100%;
@@ -271,7 +272,7 @@ input.placeholder-key:invalid {
     display: none;
 }
 
-section.modal-card-body 
+section.modal-card-body
     background-color: black;
 }
 div.modal-background {
