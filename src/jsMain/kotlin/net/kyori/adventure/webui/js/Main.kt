@@ -638,6 +638,7 @@ private fun parse() {
                     if (line == "") "\u200B" else line
                 }
 
+            println(lines)
             webSocket.send(Call(combinedLines, isolateNewlines = currentMode == Mode.LORE))
         }
     }
