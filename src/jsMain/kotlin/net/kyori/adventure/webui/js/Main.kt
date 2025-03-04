@@ -626,7 +626,7 @@ private fun parse() {
                                 add(list.getOrNull(1) ?: "\u200B")
                             }
 
-                        Mode.LORE -> list.safeSubList(0, 17)
+                        Mode.LORE -> list.safeSubList(0, 16)
                         else -> list
                     }
                 }.toMutableList()
