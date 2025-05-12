@@ -9,6 +9,9 @@
 .mono-font {
     font-family: monospace, monospace;
 }
+.no-shadow {
+    text-shadow: none !important;
+}
 @font-face {
     font-family: "Minecraft";
     src: url("../font/1_Minecraft-Regular.woff") format("woff");
@@ -294,4 +297,8 @@ table.table td, table.table th {
 
 #input {
   min-height: 24em;
+}
+
+.footer {
+    padding-bottom: 3rem;
 }
