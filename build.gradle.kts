@@ -3,6 +3,7 @@
 import net.kyori.indra.git.IndraGitExtension
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpack
+import java.time.Instant
 
 plugins {
     alias(libs.plugins.indra.git)
@@ -60,7 +61,9 @@ kotlin {
             mainClass = entryPoint
         }
         compilerOptions {
-            jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.fromTarget("$javaTarget")
+            jvmTarget =
+                org.jetbrains.kotlin.gradle.dsl.JvmTarget
+                    .fromTarget("$javaTarget")
             freeCompilerArgs.add("-Xjdk-release=$javaTarget")
         }
     }
@@ -105,7 +108,6 @@ kotlin {
 }
 
 jib {
-    to.image = "ghcr.io/kyoripowered/adventure-webui/webui"
     from {
         image = "azul/zulu-openjdk-alpine:$javaTarget-jre"
         platforms {
@@ -141,6 +143,14 @@ jib {
             Built with Adventure ${libs.versions.adventure.get()}, from webui commit ${indraGit.commit()?.name ?: "<unknown>"}""",
         )
     }
+    to {
+        image = "ghcr.io/papermc/adventure-webui/webui"
+        tags =
+            setOf(
+                "latest",
+                "${indraGit.branchName()}-${indraGit.commit()?.name()?.take(7)}-${Instant.now().epochSecond}",
+            )
+    }
 }
 
 tasks {
@@ -164,8 +174,16 @@ tasks {
         filesMatching("application.conf") {
             expand(
                 "jsScriptFile" to "${rootProject.name}.js",
-                "miniMessageVersion" to libs.adventure.minimessage.get().versionConstraint.requiredVersion,
-                "commitHash" to rootProject.extensions.getByType<IndraGitExtension>().commit()?.name.orEmpty(),
+                "miniMessageVersion" to
+                    libs.adventure.minimessage
+                        .get()
+                        .versionConstraint.requiredVersion,
+                "commitHash" to
+                    rootProject.extensions
+                        .getByType<IndraGitExtension>()
+                        .commit()
+                        ?.name
+                        .orEmpty(),
             )
         }
     }

@@ -6,6 +6,7 @@ import io.ktor.network.sockets.aSocket
 import io.ktor.network.sockets.openReadChannel
 import io.ktor.network.sockets.openWriteChannel
 import io.ktor.server.application.Application
+import io.ktor.util.toLowerCasePreservingASCIIRules
 import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.ByteWriteChannel
 import io.ktor.utils.io.readByte
@@ -27,6 +28,7 @@ import org.slf4j.LoggerFactory
 import java.io.ByteArrayOutputStream
 import java.io.DataOutputStream
 import kotlin.coroutines.CoroutineContext
+import kotlin.text.get
 import kotlin.time.Duration.Companion.hours
 
 /** Manager class for previewing server status. */
@@ -61,9 +63,11 @@ public class ServerStatusPreviewManager(
                         // handshake
                         val handshakePacket = receiveChannel.readMcPacket()
                         val protocolVersion = handshakePacket.readVarInt()
-                        val serverAddress = handshakePacket.readUtf8String()
+                        val serverAddress = handshakePacket.readUtf8String().toLowerCasePreservingASCIIRules()
                         val serverPort = handshakePacket.readShort()
                         val nextState = handshakePacket.readVarInt()
+
+                        logger.debug("Got {} request from {} with protocol version {} and server {}:{}", if (nextState == 1) "status" else "join", socket.remoteAddress, protocolVersion, serverAddress, serverPort)
 
                         if (nextState != 1) {
                             // send kick
@@ -111,15 +115,25 @@ public class ServerStatusPreviewManager(
     }
 
     private fun lookupKickMessage(serverAddress: String): String {
-        return previews.get(serverAddress.split(".")[0]) ?: "<red>You cant join here!"
+        return lookup(serverAddress) ?: "<red>You cant join here!"
     }
 
     private fun lookupMotd(serverAddress: String): String {
-        return previews.get(serverAddress.split(".")[0]) ?: "<rainbow>MiniMessage is cool!"
+        return lookup(serverAddress) ?: "<rainbow>MiniMessage is cool!"
+    }
+
+    private fun lookup(serverAddress: String): String? {
+        val key = serverAddress.substringBefore(".")
+        val mm = previews.get(key)
+        if (mm == null) {
+            logger.warn("No preview found for server address: $serverAddress (key: $key)")
+            return null
+        }
+        return mm
     }
 
     public fun initializePreview(input: String, key: String): String {
-        previews.put(key, input)
+        previews.put(key.toLowerCasePreservingASCIIRules(), input)
         return "$key.webui.advntr.dev"
     }
 
